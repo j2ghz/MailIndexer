@@ -8,12 +8,20 @@ namespace MailIndexer
 {
     class Program
     {
-        static IEnumerable<FileInfo> Crawl(DirectoryInfo dir){
-            foreach (var file in dir.EnumerateFiles()){
+        private struct TermLocation
+        {
+            public string Path;
+            public int LineNumber;
+        }
+        static IEnumerable<FileInfo> Crawl(DirectoryInfo dir)
+        {
+            foreach (var file in dir.EnumerateFiles())
+            {
                 yield return file;
             }
-            
-            foreach (var d in dir.EnumerateDirectories()){
+
+            foreach (var d in dir.EnumerateDirectories())
+            {
                 foreach (var file in Crawl(d))
                 {
                     yield return file;
@@ -24,13 +32,37 @@ namespace MailIndexer
         {
             var root = new DirectoryInfo("/home/jghz/maildir/");
             var files = Crawl(root).ToList();
-            using(var progresss= new ProgressBar(files.Count,"Reading files")){
+            var index = new SortedDictionary<string, List<TermLocation>>();
+            using (var progresss = new ProgressBar(files.Count, "Reading files"))
+            {
                 foreach (var file in files)
                 {
-                    var text = file.OpenText().ReadToEnd();
+
+                    using (var sr = file.OpenText())
+                    {
+                        var lineNumber = 0;
+                        while (!sr.EndOfStream)
+                        {
+                            var loc = new TermLocation() { Path = file.FullName, LineNumber = lineNumber++ };
+                            var terms = sr.ReadLine().Split(' ');
+                            foreach (var term in terms)
+                            {
+                                if (index.ContainsKey(term))
+                                {
+                                    index[term].Add(loc);
+                                }
+                                else
+                                {
+                                    index.Add(term, new List<TermLocation>() { loc });
+                                }
+                            }
+                        }
+                    }
+
                     progresss.Tick();
                 }
             }
+            Console.WriteLine(index.Count);
         }
     }
 }
