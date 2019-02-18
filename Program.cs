@@ -63,6 +63,30 @@ namespace MailIndexer
                 }
             }
             Console.WriteLine(index.Count);
+            while (true)
+            {
+                var search = Console.ReadLine();
+                if (index.TryGetValue(search, out var locs))
+                {
+                    foreach (var loc in locs)
+                    {
+                        Console.WriteLine($"{loc.Path}@{loc.LineNumber}");
+                    }
+                }
+                else
+                {
+                    foreach (var (term, locS) in index)
+                    {
+                        if (term.Contains(search))
+                        {
+                            foreach (var loc in locS)
+                            {
+                                Console.WriteLine($"{loc.Path}@{loc.LineNumber}");
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
